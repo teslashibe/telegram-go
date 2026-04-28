@@ -1,0 +1,17 @@
+*.test
+*.out
+/coverage.out
+/vendor/
+.idea/
+.vscode/
+.DS_Store
+
+# Sessions, secrets, and local state — NEVER commit these
+session.json
+session.db
+*.session
+*.session-journal
+.env
+.env.*
+!.env.example
+secrets/
