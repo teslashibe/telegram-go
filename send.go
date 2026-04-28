@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/gotd/td/telegram/message"
+	"github.com/gotd/td/telegram/message/styling"
 	"github.com/gotd/td/telegram/uploader"
 	"github.com/gotd/td/tg"
 )
@@ -96,14 +96,21 @@ func (c *Client) SendMedia(ctx context.Context, params SendMediaParams) error {
 		if err != nil {
 			return fmt.Errorf("%w: upload: %v", ErrSendFailed, err)
 		}
+		// Audit fix (H3): pass caption inline as a styled-text option so
+		// Telegram attaches it to the media instead of producing two
+		// separate messages.
+		var captionOpts []message.StyledTextOption
+		if params.Caption != "" {
+			captionOpts = []message.StyledTextOption{styling.Plain(params.Caption)}
+		}
 		var media message.MediaOption
 		switch kind {
 		case MediaPhoto:
-			media = message.UploadedPhoto(f)
+			media = message.UploadedPhoto(f, captionOpts...)
 		case MediaSticker:
-			media = message.UploadedSticker(f)
+			media = message.UploadedSticker(f, captionOpts...)
 		default:
-			doc := message.UploadedDocument(f)
+			doc := message.UploadedDocument(f, captionOpts...)
 			if params.MIMEType != "" {
 				doc = doc.MIME(params.MIMEType)
 			}
@@ -116,15 +123,6 @@ func (c *Client) SendMedia(ctx context.Context, params SendMediaParams) error {
 		}
 		if _, err := b.Media(ctx, media); err != nil {
 			return fmt.Errorf("%w: %v", ErrSendFailed, err)
-		}
-		if params.Caption != "" {
-			// Caption sent as a follow-up text. Telegram's media-with-caption
-			// API requires StyledTextOption arguments; we keep the surface
-			// simple by sending the caption as a separate message in the
-			// same context.
-			if _, err := message.NewSender(api).To(ip).Text(ctx, params.Caption); err != nil {
-				return fmt.Errorf("%w: caption: %v", ErrSendFailed, err)
-			}
 		}
 		return nil
 	})
@@ -254,4 +252,3 @@ func guessMediaKind(path, mime string) MediaKind {
 	return MediaDocument
 }
 
-var _ = time.Now // future dryRun timestamp logging

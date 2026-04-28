@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -310,5 +309,3 @@ func (c *Client) getMessagesLocal(ctx context.Context, peerID string, limit, off
 	return out, rows.Err()
 }
 
-// no-op so unused imports stay away in slim builds
-var _ = sql.ErrNoRows

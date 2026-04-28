@@ -3,6 +3,8 @@ package telegram
 import (
 	"context"
 	"os"
+
+	"github.com/gotd/td/tg"
 )
 
 // Status returns a snapshot of the client's auth/connection state.
@@ -19,6 +21,24 @@ func (c *Client) Status(ctx context.Context) (StatusReport, error) {
 	rep.Connected = c.connected
 	self := c.selfUser
 	c.mu.RUnlock()
+
+	// Audit fix (M1): if Connect succeeded but Self() failed transiently
+	// at startup, retry now so Status reports an authoritative answer.
+	if rep.Connected && self == nil {
+		_ = c.withAPI(func(api *tg.Client) error {
+			users, err := api.UsersGetUsers(ctx, []tg.InputUserClass{&tg.InputUserSelf{}})
+			if err != nil || len(users) == 0 {
+				return nil
+			}
+			if uu, ok := users[0].(*tg.User); ok {
+				self = uu
+				c.mu.Lock()
+				c.selfUser = uu
+				c.mu.Unlock()
+			}
+			return nil
+		})
+	}
 
 	if self != nil {
 		rep.Authorized = true

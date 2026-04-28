@@ -42,9 +42,11 @@ func (c *Client) Connect(ctx context.Context) error {
 		return fmt.Errorf("%w: mkdir %s: %v", ErrStoreInit, c.storeDir, err)
 	}
 
+	dispatcher := c.installUpdateDispatcher()
 	tgClient := telegram.NewClient(c.apiID, c.apiHash, telegram.Options{
 		SessionStorage: c.sessionStorage(),
 		Logger:         c.logger.Named("gotd"),
+		UpdateHandler:  dispatcher,
 		Device: telegram.DeviceConfig{
 			DeviceModel:   c.deviceModel,
 			SystemVersion: c.systemVersion,

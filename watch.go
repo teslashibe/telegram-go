@@ -6,11 +6,16 @@ import (
 )
 
 // Watch returns messages newer than params.SinceRowID from the local
-// SQLite log (which is populated by the live update stream). Use
-// result.Cursor as the next call's SinceRowID for stable polling.
+// SQLite log (which is populated by the live update dispatcher and by
+// any GetMessages / Search call). Use result.Cursor as the next call's
+// SinceRowID for stable polling.
 //
-// Watch never blocks; agents poll on a cadence they choose. The result
-// always carries an empty (not nil) Messages slice.
+// When PeerID is set the cursor still advances against the global
+// rowid space, so a second call with a different PeerID may skip rows
+// — keep PeerID stable across consecutive Watch calls if you want a
+// gap-free per-peer feed. Watch never blocks; agents poll on a cadence
+// they choose. The result always carries an empty (not nil) Messages
+// slice.
 func (c *Client) Watch(ctx context.Context, params WatchParams) (WatchResult, error) {
 	c.mu.RLock()
 	db := c.logDB

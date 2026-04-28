@@ -12,11 +12,11 @@ package telegram
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	_ "modernc.org/sqlite"
 
@@ -205,10 +205,12 @@ func (c *Client) Close() error {
 		cancel()
 	}
 	if done != nil {
-		// Wait briefly for the run goroutine to unwind. We don't want
-		// to block forever if the network is wedged.
+		// Audit fix (H2): bound the wait so a wedged network can't pin
+		// Close forever. gotd's Run terminates promptly once runCtx is
+		// cancelled; 5s is generous.
 		select {
 		case <-done:
+		case <-time.After(5 * time.Second):
 		}
 	}
 	if logDB != nil {
@@ -293,4 +295,3 @@ func defaultStoreDir() string {
 	return filepath.Join(home, "Library", "Application Support", "teslashibe", "telegram-go")
 }
 
-var _ = errors.Is // keep errors in import set for future use
