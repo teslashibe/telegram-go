@@ -79,7 +79,6 @@ Subsequent runs skip the SMS/2FA prompts.
 | Method | Tool |
 |---|---|
 | `Status` | `telegram_status` |
-| `PairCode` | `telegram_pair_code` (request a fresh SMS code without full Connect) |
 | `ListChats` | `telegram_list_chats` |
 | `GetMessages` | `telegram_get_messages` |
 | `Search` | `telegram_search` |
